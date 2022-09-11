@@ -1,3 +1,14 @@
+//
+// +----------------------------------------------------------+
+// + Author: J Bannerman aka GravitySquid
+// + Date: July 2022
+// + Desc:
+// +    Draw a zone based on the High and Low of 
+// +    the session open (e.g. Frankfurt open to London open)
+// +    Youtuber suggested to wait for the zone break out of 
+// +    the zone and trade in the direction of the breakout.
+// +----------------------------------------------------------+
+//
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,9 +32,6 @@ namespace cAlgo
         [Parameter("Zone length in hours", DefaultValue = "10")]
         public double ZoneHours { get; set; }
 
-        //[Output("Main")]
-        //public IndicatorDataSeries Result { get; set; }
-
         private DateTime openStart, openEnd;
         private double zoneHigh, zoneLow;
 
@@ -43,25 +51,18 @@ namespace cAlgo
             DateTime start = currentDate.AddHours(openStart.Hour).AddMinutes(openStart.Minute).ToUniversalTime();
             DateTime end = currentDate.AddHours(openEnd.Hour).AddMinutes(openEnd.Minute).ToUniversalTime();
             DateTime zoneEnd = start.AddHours(ZoneHours);
-            //DateTime dtCurrentBar = Bars.OpenTimes[index].ToLocalTime();
-            //DateTime dtNextBar = Bars.OpenTimes[index +1].ToLocalTime();
             zoneHigh = double.MinValue;
             zoneLow = double.MaxValue;
-            bool done = false;
+            bool gotValues = false;
             for (int i = Bars.OpenTimes.GetIndexByTime(start); i < Bars.OpenTimes.GetIndexByTime(end); i++)
             {
                 zoneHigh = Math.Max(zoneHigh, Bars.HighPrices[i]);
                 zoneLow = Math.Min(zoneLow, Bars.LowPrices[i]);
-                done = true;
+                gotValues = true;
             }
 
-            Print("start index {0} end Index {1}", Bars.OpenTimes.GetIndexByTime(start), Bars.OpenTimes.GetIndexByTime(end));
-            Print("done {0}", done);
-            if (done) {
-                //Chart.DrawRectangle("Open session " + start.ToString(), start, zoneHigh, end, zoneLow, Color.FromArgb(50, 0, 50, 255)).IsFilled = true;
+            if (gotValues && !(double.IsNaN(zoneHigh) || double.IsNaN(zoneLow))) {
                 Chart.DrawRectangle("Open session " + start.ToString(), start, zoneHigh, zoneEnd, zoneLow, Color.FromArgb(100, 0, 50, 255), 1).IsFilled = true;
-                //Chart.DrawTrendLine("Session Open High " + start.ToString(), start, zoneHigh, zoneEnd, zoneHigh, Color.Blue);
-                //Chart.DrawTrendLine("Session Open Low " + start.ToString(), start, zoneLow, zoneEnd, zoneLow, Color.Blue);
             }
         }
     }
